@@ -18,6 +18,12 @@ const routes = [
     name: "Offers",
     component: OfferList,
   },
+  {
+    path: "/offers/:offerNumber(\\d+)",
+    name: "Offer",
+    props: true,
+    component: () => import("../views/Offer.vue"),
+  },
 ];
 
 const router = createRouter({

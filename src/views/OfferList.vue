@@ -5,10 +5,12 @@ import Column from "primevue/column";
 import Tag from "primevue/tag";
 import InputText from "primevue/inputtext";
 import Dropdown from "primevue/dropdown";
+import Calendar from "primevue/calendar";
 
 const filters = reactive({
   text: "",
   status: "",
+  endDate: undefined as undefined | Date,
 });
 
 import { Offer } from "../services/api";
@@ -38,20 +40,21 @@ const getStatusSeverity = (status: Offer["status"]) => {
   }
 };
 
-debouncedWatch(
-  filters,
-  () => {
-    const params = [];
-    if (filters.text) {
-      params.push(`user_like=${filters.text}`);
-    }
-    if (filters.status) {
-      params.push(`status=${filters.status}`);
-    }
-    url.value = `/api/offers?${params.join("&")}`;
-  },
-  { debounce: 500 }
-);
+const updateApiUrl = () => {
+  const params = [];
+  if (filters.text) {
+    params.push(`user_like=${filters.text}`);
+  }
+  if (filters.status) {
+    params.push(`status=${filters.status}`);
+  }
+  if (filters.endDate) {
+    params.push(`endDate_lte=${filters.endDate.toISOString().substr(0, 10)}`);
+  }
+  url.value = `/api/offers?${params.join("&")}`;
+};
+
+debouncedWatch(filters, updateApiUrl, { debounce: 300 });
 </script>
 
 <template>
@@ -72,6 +75,12 @@ debouncedWatch(
           placeholder="Select a Status"
         />
       </div>
+      <div class="p-field p-col">
+        <Calendar
+          v-model="filters.endDate"
+          placeholder="Select a max end date"
+        />
+      </div>
     </div>
 
     <h1 v-if="isFetching">LOADING</h1>
@@ -81,7 +90,13 @@ debouncedWatch(
     </div>
     <div v-else>
       <DataTable :value="offers" responsiveLayout="scroll">
-        <Column field="number" header="Numéro"></Column>
+        <Column field="number" header="Numéro">
+          <template #body="slotProps">
+            <router-link :to="`/offers/${slotProps.data.number}`">
+              {{ slotProps.data.number }}
+            </router-link>
+          </template>
+        </Column>
         <Column field="endDate" header="Date de fin">
           <template #body="slotProps">
             {{ formatDate(slotProps.data.endDate) }}
